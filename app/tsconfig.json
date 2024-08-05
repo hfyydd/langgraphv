@@ -1,0 +1,16 @@
+// app/tsconfig.json
+
+{
+    "compilerOptions": {
+      "module": "ESNext",
+      "allowSyntheticDefaultImports": true,
+      "moduleResolution": "node",
+      "target": "ES5",
+      "jsx": "react",
+      "sourceMap": true,
+      "experimentalDecorators": true,
+      "lib": ["dom", "ES2015"],
+      "strict": true
+    },
+    "exclude": ["node_modules"]
+  }

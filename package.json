@@ -1,0 +1,68 @@
+{
+  "name": "langgraphv",
+  "displayName": "langgraphv",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "langgraphv.openVisualizer",
+        "title": "Open Langgraph Visualizer"
+      },
+      {
+        "command": "langgraphv.newGraph",
+        "title": "LangGraph: New Graph"
+      },
+      {
+        "command": "langgraphv.openPythonFile",
+        "title": "LangGraph: Open Python File"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "concurrently \"pnpm run compile:view\" \"pnpm run compile:extension\"",
+    "compile:extension": "tsc -p ./",
+    "compile:view": "webpack --mode development",
+    "watch": "concurrently \"pnpm run watch:extension\" \"pnpm run watch:view\"",
+    "watch:extension": "tsc -watch -p ./",
+    "watch:view": "webpack --watch --mode development",
+    "pretest": "pnpm run compile && pnpm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.7",
+    "@types/node": "20.x",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/vscode": "^1.91.0",
+    "@typescript-eslint/eslint-plugin": "^7.14.1",
+    "@typescript-eslint/parser": "^7.11.0",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0",
+    "concurrently": "^8.2.2",
+    "css-loader": "^7.1.2",
+    "eslint": "^8.57.0",
+    "npm-run-all": "^4.1.5",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.25.1"
+  }
+}

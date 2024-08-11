@@ -1,6 +1,6 @@
 export interface Node {
     id: string;
-    type: 'input' | 'output' | 'default';
+    type: 'start' | 'end' | 'custom';
     position: { x: number; y: number };
     data: {
         label: string;

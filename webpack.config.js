@@ -3,7 +3,8 @@
 const path = require('path');
 
 module.exports = {
-  entry: path.join(__dirname, 'app', 'index.tsx'),
+  entry: [path.join(__dirname, 'app', 'index.tsx'),
+  path.join(__dirname, 'src/view', 'tailwind.css')],
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.css'],
   },
@@ -17,7 +18,7 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader'],
+        use: ['style-loader', 'css-loader','postcss-loader'],
       },
     ],
   },

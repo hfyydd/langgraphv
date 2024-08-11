@@ -28,7 +28,7 @@
     ]
   },
   "scripts": {
-    "compile": "concurrently \"pnpm run compile:view\" \"pnpm run compile:extension\"",
+    "compile": "concurrently \"pnpm run compile:view\" \"pnpm run compile:extension\" \"pnpm run build-css\" ",
     "compile:extension": "tsc -p ./",
     "compile:view": "webpack --mode development",
     "watch": "concurrently \"pnpm run watch:extension\" \"pnpm run watch:view\"",
@@ -36,7 +36,8 @@
     "watch:view": "webpack --watch --mode development",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "build-css": "postcss src/view/tailwind.css -o out/app/styles.css"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
@@ -49,11 +50,16 @@
     "@typescript-eslint/parser": "^7.11.0",
     "@vscode/test-cli": "^0.0.9",
     "@vscode/test-electron": "^2.4.0",
+    "autoprefixer": "^10.4.20",
     "concurrently": "^8.2.2",
     "css-loader": "^7.1.2",
     "eslint": "^8.57.0",
     "npm-run-all": "^4.1.5",
+    "postcss": "^8.4.41",
+    "postcss-cli": "^11.0.0",
+    "postcss-loader": "^8.1.1",
     "style-loader": "^4.0.0",
+    "tailwindcss": "^3.4.9",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.5",
     "webpack": "^5.93.0",

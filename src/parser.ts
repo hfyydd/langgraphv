@@ -26,7 +26,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
             if (nodeMatch) {
                 nodes.push({
                     id: nodeMatch[1],
-                    type: 'default',
+                    type: 'custom',
                     position: { x: index * 150, y: index * 100 },
                     data: { label: nodeMatch[1], function: nodeMatch[2] }
                 });
@@ -43,7 +43,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
                     if (!nodes.some(node => node.id === 'start')) {
                         nodes.push({
                             id: 'start',
-                            type: 'input',
+                            type: 'start',
                             position: { x: 0, y: 0 },
                             data: { label: 'Start' }
                         });
@@ -55,7 +55,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
                     if (!nodes.some(node => node.id === 'end')) {
                         nodes.push({
                             id: 'end',
-                            type: 'output',
+                            type: 'end',
                             position: { x: (index + 1) * 150, y: 100 },
                             data: { label: 'End' }
                         });
@@ -76,7 +76,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
                 if (!nodes.some(node => node.id === 'start')) {
                     nodes.push({
                         id: 'start',
-                        type: 'input',
+                        type: 'start',
                         position: { x: 0, y: 0 },
                         data: { label: 'Start' }
                     });
@@ -94,7 +94,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
                 if (!nodes.some(node => node.id === 'end')) {
                     nodes.push({
                         id: 'end',
-                        type: 'output',
+                        type: 'end',
                         position: { x: (index + 1) * 150, y: 100 },
                         data: { label: 'End' }
                     });
@@ -150,7 +150,7 @@ function parseConditionalEdge(content: string, nodes: Node[], edges: Edge[]) {
             if (!nodes.some(node => node.id === 'end')) {
                 nodes.push({
                     id: 'end',
-                    type: 'output',
+                    type: 'end',
                     position: { x: (nodes.length + 1) * 150, y: 100 },
                     data: { label: 'End' }
                 });

@@ -23,7 +23,7 @@ function parseLangGraphFile(fileContent) {
             if (nodeMatch) {
                 nodes.push({
                     id: nodeMatch[1],
-                    type: 'default',
+                    type: 'custom',
                     position: { x: index * 150, y: index * 100 },
                     data: { label: nodeMatch[1], function: nodeMatch[2] }
                 });
@@ -38,7 +38,7 @@ function parseLangGraphFile(fileContent) {
                     if (!nodes.some(node => node.id === 'start')) {
                         nodes.push({
                             id: 'start',
-                            type: 'input',
+                            type: 'start',
                             position: { x: 0, y: 0 },
                             data: { label: 'Start' }
                         });
@@ -49,7 +49,7 @@ function parseLangGraphFile(fileContent) {
                     if (!nodes.some(node => node.id === 'end')) {
                         nodes.push({
                             id: 'end',
-                            type: 'output',
+                            type: 'end',
                             position: { x: (index + 1) * 150, y: 100 },
                             data: { label: 'End' }
                         });
@@ -68,7 +68,7 @@ function parseLangGraphFile(fileContent) {
                 if (!nodes.some(node => node.id === 'start')) {
                     nodes.push({
                         id: 'start',
-                        type: 'input',
+                        type: 'start',
                         position: { x: 0, y: 0 },
                         data: { label: 'Start' }
                     });
@@ -85,7 +85,7 @@ function parseLangGraphFile(fileContent) {
                 if (!nodes.some(node => node.id === 'end')) {
                     nodes.push({
                         id: 'end',
-                        type: 'output',
+                        type: 'end',
                         position: { x: (index + 1) * 150, y: 100 },
                         data: { label: 'End' }
                     });
@@ -134,7 +134,7 @@ function parseConditionalEdge(content, nodes, edges) {
             if (!nodes.some(node => node.id === 'end')) {
                 nodes.push({
                     id: 'end',
-                    type: 'output',
+                    type: 'end',
                     position: { x: (nodes.length + 1) * 150, y: 100 },
                     data: { label: 'End' }
                 });

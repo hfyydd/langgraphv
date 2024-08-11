@@ -18,7 +18,7 @@ import {
   NodeTypes
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import BaseNode from './node/BaseNode';
+import {nodeTypes} from './node/BaseNode';
 
 interface FlowProps {
   initialNodes: Node[];
@@ -35,9 +35,7 @@ type GraphOperation =
   | { type: 'updateNode'; node: Node }
   | { type: 'updateEdge'; edge: Edge };
 
-const nodeTypes: NodeTypes = {
-  baseNode: BaseNode,
-};
+
 
 const nodeWidth = 172;
 const nodeHeight = 36;

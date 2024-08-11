@@ -30,6 +30,7 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const ViewLoader_1 = require("./view/ViewLoader");
 const path = __importStar(require("path"));
+const parser_1 = require("./parser");
 const graphTemplate = `from typing import Annotated
 
 from typing_extensions import TypedDict
@@ -89,7 +90,7 @@ function activate(context) {
             // 检查文件是否是 Python 文件
             if (document.languageId === 'python') {
                 const fileContent = document.getText();
-                const parsedGraph = parseLangGraphFile(fileContent);
+                const parsedGraph = (0, parser_1.parseLangGraphFile)(fileContent);
                 // 等待一小段时间确保 WebView 已经准备好
                 setTimeout(() => {
                     // 发送解析结果到 WebView
@@ -163,77 +164,4 @@ function activate(context) {
 }
 // This method is called when your extension is deactivated
 function deactivate() { }
-function parseLangGraphFile(fileContent) {
-    const nodes = [];
-    const edges = [];
-    const lines = fileContent.split('\n');
-    let graphBuilderVariable = null;
-    let stateClassName = null;
-    const functionDefinitions = {};
-    lines.forEach((line, index) => {
-        // 查找 StateGraph 实例的变量名和 State 类名
-        const stateGraphMatch = line.match(/(\w+)\s*=\s*StateGraph\((\w+)\)/);
-        if (stateGraphMatch) {
-            graphBuilderVariable = stateGraphMatch[1];
-            stateClassName = stateGraphMatch[2];
-        }
-        // 查找函数定义，只要参数类型是 State 就认为是节点
-        const functionDefMatch = line.match(/def\s+(\w+)\s*\(\s*\w+\s*:\s*(\w+)\s*\)/);
-        if (functionDefMatch && functionDefMatch[2] === stateClassName) {
-            functionDefinitions[functionDefMatch[1]] = { name: functionDefMatch[1], line: index };
-        }
-        if (graphBuilderVariable) {
-            // 解析边
-            const edgeRegex = new RegExp(`${graphBuilderVariable}\\.add_edge\\("(\\w+)",\\s*"(\\w+)"`);
-            const edgeMatch = line.match(edgeRegex);
-            if (edgeMatch) {
-                edges.push({
-                    id: `e${edgeMatch[1]}-${edgeMatch[2]}`,
-                    source: edgeMatch[1],
-                    target: edgeMatch[2]
-                });
-            }
-            // 解析入口点
-            const entryPointMatch = line.match(`${graphBuilderVariable}\\.set_entry_point\\("(\\w+)"`);
-            if (entryPointMatch) {
-                nodes.push({
-                    id: 'entry',
-                    type: 'entry',
-                    position: { x: 0, y: 0 },
-                    data: { label: 'Entry Point' }
-                });
-                edges.push({
-                    id: `entry-${entryPointMatch[1]}`,
-                    source: 'entry',
-                    target: entryPointMatch[1]
-                });
-            }
-            // 解析结束点
-            const finishPointMatch = line.match(`${graphBuilderVariable}\\.set_finish_point\\("(\\w+)"`);
-            if (finishPointMatch) {
-                nodes.push({
-                    id: 'finish',
-                    type: 'finish',
-                    position: { x: index * 150, y: index * 100 },
-                    data: { label: 'Finish Point' }
-                });
-                edges.push({
-                    id: `${finishPointMatch[1]}-finish`,
-                    source: finishPointMatch[1],
-                    target: 'finish'
-                });
-            }
-        }
-    });
-    // 将所有接受 State 作为参数的函数添加为节点
-    Object.values(functionDefinitions).forEach((func, index) => {
-        nodes.push({
-            id: func.name,
-            type: 'function',
-            position: { x: index * 150, y: func.line * 30 },
-            data: { label: func.name, function: func.name }
-        });
-    });
-    return { nodes, edges };
-}
 //# sourceMappingURL=extension.js.map

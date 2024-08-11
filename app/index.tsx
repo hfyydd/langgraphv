@@ -47,7 +47,9 @@ function App() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      
       const message = event.data;
+      console.log('Posting message to webview:', message);
       if (message.type === 'updateGraph') {
         setNodes(message.data.nodes);
         setEdges(message.data.edges);

@@ -15,14 +15,22 @@ import {
   addEdge,
   NodeChange,
   applyNodeChanges,
+  NodeTypes
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import BaseNode from './node/BaseNode';
 
 interface FlowProps {
   initialNodes: Node[];
   initialEdges: Edge[];
   onGraphChange?: (nodes: Node[], edges: Edge[]) => void; 
 }
+
+
+
+const nodeTypes: NodeTypes = {
+  baseNode: BaseNode,
+};
 
 const nodeWidth = 172;
 const nodeHeight = 36;
@@ -89,7 +97,7 @@ function Flow({ initialNodes, initialEdges, onGraphChange }: FlowProps) {
       id: `node_${nodes.length + 1}`,
       data: { label: `Node ${nodes.length + 1}` },
       position: { x: Math.random() * 500, y: Math.random() * 500 },
-      type: 'default',
+      type: 'baseNode',
     };
     const updatedNodes = [...nodes, newNode];
     setNodes(updatedNodes);
@@ -140,6 +148,7 @@ function Flow({ initialNodes, initialEdges, onGraphChange }: FlowProps) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChangeHandler}
         onConnect={onConnect}

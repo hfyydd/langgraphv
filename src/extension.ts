@@ -1,10 +1,10 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { ViewLoader } from './view/ViewLoader';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseLangGraphFile } from './parser';
+import { modifyLangGraphFile } from './modifyLangGraphFile';
+import { GlobalState } from './globalState';
 
 const graphTemplate = `from typing import Annotated
 
@@ -46,104 +46,111 @@ graph_builder.set_finish_point("chatbot")
 graph = graph_builder.compile()
 `;
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    console.log('Congratulations, your extension "langgraphv" is now active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "langgraphv" is now active!');
+    const watcher = vscode.workspace.createFileSystemWatcher('**/*.py');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('langgraphv.openVisualizer', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		ViewLoader.showWebview(context);
-		//vscode.window.showInformationMessage('Hello World from langgraphv!');
+    const updateCurrentFilePath = (document: vscode.TextDocument | undefined) => {
+        GlobalState.currentFilePath = document?.languageId === 'python' ? document.uri.fsPath : undefined;
+    };
+
+    const handleFileChange = async (uri: vscode.Uri) => {
+        const document = await vscode.workspace.openTextDocument(uri);
+        if (document.languageId === 'python') {
+            updateCurrentFilePath(document);
+            const parsedGraph = parseLangGraphFile(document.getText());
+            ViewLoader.postMessageToWebview({ type: 'updateGraph', data: parsedGraph });
+        }
+    };
+
+    const messageHandler = (message: any) => {
+        console.log('Received message in extension:', message);
+        if (message.type === 'graphOperation' && GlobalState.currentFilePath) {
+            //console.log('Processing graph operation:', message.operation);
+            modifyLangGraphFile(GlobalState.currentFilePath, message.operation);
+        }
+    };
+
+    const openVisualizer = vscode.commands.registerCommand('langgraphv.openVisualizer', () => {
         const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            const document = editor.document;
-            // 检查文件是否是 Python 文件
-            if (document.languageId === 'python') {
-                const fileContent = document.getText();
-                const parsedGraph = parseLangGraphFile(fileContent);
-                
-                // 等待一小段时间确保 WebView 已经准备好
-                setTimeout(() => {
-                    // 发送解析结果到 WebView
-                    ViewLoader.postMessageToWebview({
-                        type: 'updateGraph',
-                        data: parsedGraph
-                    });
-                }, 1000); // 1秒的延迟，可以根据需要调整
-
-                vscode.window.showInformationMessage('LangGraph file parsed and visualizer opened!');
-            } else {
-                vscode.window.showWarningMessage('The active file is not a Python file. Please open a LangGraph Python file.');
-            }
+        if (editor && editor.document.languageId === 'python') {
+            updateCurrentFilePath(editor.document);
+            ViewLoader.showWebview(context, messageHandler);
+            const parsedGraph = parseLangGraphFile(editor.document.getText());
+            setTimeout(() => {
+                ViewLoader.postMessageToWebview({ type: 'updateGraph', data: parsedGraph });
+            }, 1000);
+            vscode.window.showInformationMessage('LangGraph file parsed and visualizer opened!');
         } else {
-            vscode.window.showWarningMessage('No active editor found. Please open a LangGraph file.');
+            vscode.window.showWarningMessage('Please open a Python file first.');
         }
-	});
-
-    let newGraphDisposable = vscode.commands.registerCommand('langgraphv.newGraph', async () => {
-        let targetFolder: vscode.Uri | undefined;
-
-        // Check if there's an open workspace
-        if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-            // If there's an active text editor, use its folder; otherwise use the first workspace folder
-            const activeEditor = vscode.window.activeTextEditor;
-            if (activeEditor) {
-                targetFolder = vscode.Uri.file(path.dirname(activeEditor.document.uri.fsPath));
-            } else {
-                targetFolder = vscode.workspace.workspaceFolders[0].uri;
-            }
-        } else {
-            // No open workspace, ask the user to select a folder
-            const folderUri = await vscode.window.showOpenDialog({
-                canSelectFiles: false,
-                canSelectFolders: true,
-                canSelectMany: false,
-                openLabel: 'Select Folder'
-            });
-
-            if (folderUri && folderUri[0]) {
-                targetFolder = folderUri[0];
-                // Open the selected folder in VS Code
-                await vscode.commands.executeCommand('vscode.openFolder', targetFolder);
-            } else {
-                vscode.window.showErrorMessage('No folder selected. Cannot create new graph file.');
-                return;
-            }
-        }
-
-        // Ask for the file name
-		const defaultFileName = 'new_graph.py';
-		const fileName = await vscode.window.showInputBox({
-			prompt: 'Enter a name for the new graph file',
-			placeHolder: defaultFileName,
-			value: defaultFileName // Set default value
-		});
-        const finalFileName = fileName || defaultFileName;
-
-		const newFile = vscode.Uri.file(path.join(targetFolder.fsPath, finalFileName.endsWith('.py') ? finalFileName : `${finalFileName}.py`));
-    
-		try {
-			await vscode.workspace.fs.writeFile(newFile, Buffer.from(graphTemplate));
-			const document = await vscode.workspace.openTextDocument(newFile);
-			await vscode.commands.executeCommand('langgraphv.openVisualizer', newFile);
-			await vscode.window.showTextDocument(document, { preserveFocus: false, preview: false });
-			vscode.window.showInformationMessage(`New graph file created: ${newFile.fsPath}`);
-		} catch (error) {
-			vscode.window.showErrorMessage(`Failed to create new graph file: ${error}`);
-		}
     });
 
+    const newGraph = vscode.commands.registerCommand('langgraphv.newGraph', async () => {
+        const targetFolder = await getTargetFolder();
+        if (!targetFolder) {return;}
 
-	context.subscriptions.push(disposable,newGraphDisposable);
+        const fileName = await vscode.window.showInputBox({
+            prompt: 'Enter a name for the new graph file',
+            placeHolder: 'new_graph.py',
+            value: 'new_graph.py'
+        }) || 'new_graph.py';
+
+        const newFile = vscode.Uri.file(path.join(targetFolder.fsPath, fileName.endsWith('.py') ? fileName : `${fileName}.py`));
+
+        try {
+            await vscode.workspace.fs.writeFile(newFile, Buffer.from(graphTemplate));
+            const document = await vscode.workspace.openTextDocument(newFile);
+            await vscode.window.showTextDocument(document);
+            
+            GlobalState.currentFilePath = newFile.fsPath;
+            await vscode.commands.executeCommand('langgraphv.openVisualizer');
+            vscode.window.showInformationMessage(`New graph file created: ${newFile.fsPath}`);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to create new graph file: ${error}`);
+        }
+    });
+
+    vscode.window.onDidChangeActiveTextEditor(editor => updateCurrentFilePath(editor?.document));
+
+    //监控文件变化
+    // watcher.onDidChange(handleFileChange);
+    // watcher.onDidCreate(handleFileChange);
+
+    // context.subscriptions.push(watcher, openVisualizer, newGraph);
+    vscode.workspace.onDidSaveTextDocument((document) => {
+        if (document.uri.fsPath === GlobalState.currentFilePath) {
+            const fileContent = document.getText();
+            const parsedGraph = parseLangGraphFile(fileContent);
+            ViewLoader.postMessageToWebview({
+                type: 'updateGraph',
+                data: parsedGraph
+            });
+        }
+    }, null, context.subscriptions);
+
+    context.subscriptions.push(openVisualizer, newGraph);
 }
 
-// This method is called when your extension is deactivated
+async function getTargetFolder(): Promise<vscode.Uri | undefined> {
+    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+        return vscode.window.activeTextEditor
+            ? vscode.Uri.file(path.dirname(vscode.window.activeTextEditor.document.uri.fsPath))
+            : vscode.workspace.workspaceFolders[0].uri;
+    } else {
+        const folderUri = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false,
+            openLabel: 'Select Folder'
+        });
+        if (folderUri && folderUri[0]) {
+            await vscode.commands.executeCommand('vscode.openFolder', folderUri[0]);
+            return folderUri[0];
+        }
+    }
+    return undefined;
+}
+
 export function deactivate() {}

@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseLangGraphFile = parseLangGraphFile;
+const globalState_1 = require("./globalState");
 function parseLangGraphFile(fileContent) {
     const nodes = [];
     const edges = [];
     const lines = fileContent.split('\n');
-    let graphBuilderVariable = null;
     let stateClassName = null;
     let conditionalEdgeBuffer = '';
     let isParsingConditionalEdge = false;
@@ -13,12 +13,12 @@ function parseLangGraphFile(fileContent) {
         // 查找 StateGraph 实例的变量名和 State 类名
         const stateGraphMatch = line.match(/(\w+)\s*=\s*StateGraph\((\w+)\)/);
         if (stateGraphMatch) {
-            graphBuilderVariable = stateGraphMatch[1];
+            globalState_1.GlobalState.graphBuilderVariable = stateGraphMatch[1];
             stateClassName = stateGraphMatch[2];
         }
-        if (graphBuilderVariable) {
+        if (globalState_1.GlobalState.graphBuilderVariable) {
             // 解析通过 add_node 添加的节点
-            const nodeRegex = new RegExp(`${graphBuilderVariable}\\.add_node\\("(\\w+)",\\s*(\\w+)`);
+            const nodeRegex = new RegExp(`${globalState_1.GlobalState.graphBuilderVariable}\\.add_node\\("(\\w+)",\\s*(\\w+)`);
             const nodeMatch = line.match(nodeRegex);
             if (nodeMatch) {
                 nodes.push({
@@ -29,7 +29,7 @@ function parseLangGraphFile(fileContent) {
                 });
             }
             // 解析边，包括 START 和 END 的情况
-            const edgeRegex = new RegExp(`${graphBuilderVariable}\\.add_edge\\(\\s*([\\w"]+)\\s*,\\s*([\\w"]+)\\s*\\)`);
+            const edgeRegex = new RegExp(`${globalState_1.GlobalState.graphBuilderVariable}\\.add_edge\\(\\s*([\\w"]+)\\s*,\\s*([\\w"]+)\\s*\\)`);
             const edgeMatch = line.match(edgeRegex);
             if (edgeMatch) {
                 let source = edgeMatch[1].replace(/"/g, '');
@@ -63,7 +63,7 @@ function parseLangGraphFile(fileContent) {
                 });
             }
             // 解析入口点
-            const entryPointMatch = line.match(`${graphBuilderVariable}\\.set_entry_point\\("(\\w+)"`);
+            const entryPointMatch = line.match(`${globalState_1.GlobalState.graphBuilderVariable}\\.set_entry_point\\("(\\w+)"`);
             if (entryPointMatch) {
                 if (!nodes.some(node => node.id === 'start')) {
                     nodes.push({
@@ -80,7 +80,7 @@ function parseLangGraphFile(fileContent) {
                 });
             }
             // 解析结束点
-            const finishPointMatch = line.match(`${graphBuilderVariable}\\.set_finish_point\\("(\\w+)"`);
+            const finishPointMatch = line.match(`${globalState_1.GlobalState.graphBuilderVariable}\\.set_finish_point\\("(\\w+)"`);
             if (finishPointMatch) {
                 if (!nodes.some(node => node.id === 'end')) {
                     nodes.push({
@@ -97,7 +97,7 @@ function parseLangGraphFile(fileContent) {
                 });
             }
             // 开始解析条件边
-            if (line.includes(`${graphBuilderVariable}.add_conditional_edges(`)) {
+            if (line.includes(`${globalState_1.GlobalState.graphBuilderVariable}.add_conditional_edges(`)) {
                 isParsingConditionalEdge = true;
                 conditionalEdgeBuffer = line;
             }

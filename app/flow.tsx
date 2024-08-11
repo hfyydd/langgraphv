@@ -24,9 +24,16 @@ interface FlowProps {
   initialNodes: Node[];
   initialEdges: Edge[];
   onGraphChange?: (nodes: Node[], edges: Edge[]) => void; 
+  onGraphOperation?: (operation: GraphOperation) => void;
 }
 
-
+type GraphOperation = 
+  | { type: 'addNode'; node: Node }
+  | { type: 'removeNode'; nodeId: string }
+  | { type: 'addEdge'; edge: Edge }
+  | { type: 'removeEdge'; edgeId: string }
+  | { type: 'updateNode'; node: Node }
+  | { type: 'updateEdge'; edge: Edge };
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -65,7 +72,7 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
   };
 };
 
-function Flow({ initialNodes, initialEdges, onGraphChange }: FlowProps) {
+function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: FlowProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -88,52 +95,29 @@ function Flow({ initialNodes, initialEdges, onGraphChange }: FlowProps) {
       setNodes([...layoutedNodes]);
       setEdges([...layoutedEdges]);
       onGraphChange?.(layoutedNodes, layoutedEdges);
+      // 为每个节点触发 updateNode 操作
+      layoutedNodes.forEach(node => {
+        onGraphOperation?.({ type: 'updateNode', node });
+      });
     },
-    [nodes, edges, onGraphChange]
+    [nodes, edges, onGraphChange, onGraphOperation]
   );
 
   const addNode = useCallback(() => {
     const newNode: Node = {
       id: `node_${nodes.length + 1}`,
-      data: { label: `Node ${nodes.length + 1}` },
+      data: { label: `node${nodes.length + 1}` },
       position: { x: Math.random() * 500, y: Math.random() * 500 },
-      type: 'baseNode',
+      type: 'default',
     };
     const updatedNodes = [...nodes, newNode];
     setNodes(updatedNodes);
     onGraphChange?.(updatedNodes, edges);
-  }, [nodes, edges, onGraphChange]);
+    // 触发 onGraphOperation
+    onGraphOperation?.({ type: 'addNode', node: newNode });
+  }, [nodes, edges, onGraphChange, onGraphOperation]);
 
 
-  const onEdgesChangeHandler = useCallback(
-    (changes: EdgeChange[]) => {
-      const updatedEdges = applyEdgeChanges(changes, edges);
-      setEdges(updatedEdges);
-      onGraphChange?.(nodes, updatedEdges);
-    },
-    [edges, nodes, onGraphChange]
-  );
-
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      const newEdge: Edge = {
-        id: `e${connection.source}-${connection.target}`,
-        source: connection.source,
-        target: connection.target,
-        animated: true,
-        style: { stroke: '#2a9d8f', strokeWidth: 2 },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: '#2a9d8f',
-        },
-      };
-      
-      const updatedEdges = addEdge(newEdge, edges);
-      setEdges(updatedEdges);
-      onGraphChange?.(nodes, updatedEdges);
-    },
-    [edges, nodes, onGraphChange]
-  );
   const edgeOptions = {
     animated: true,
     style: { stroke: '#2a9d8f', strokeWidth: 2 },
@@ -143,15 +127,92 @@ function Flow({ initialNodes, initialEdges, onGraphChange }: FlowProps) {
     },
   };
 
+  // Expose updateGraph function to window
+  const updateGraph = useCallback((newNodes: Node[], newEdges: Edge[]) => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      newNodes,
+      newEdges
+    );
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+    onGraphChange?.(layoutedNodes, layoutedEdges);
+  }, [onGraphChange]);
+
+  useEffect(() => {
+    if (typeof (window as any).updateGraphFlow !== 'function') {
+      (window as any).updateGraphFlow = updateGraph;
+    }
+  }, [updateGraph]);
+
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      onNodesChange(changes);
+      changes.forEach(change => {
+        if (change.type === 'remove') {
+          onGraphOperation?.({ type: 'removeNode', nodeId: change.id });
+        } 
+        else if (change.type === 'position') {
+          const updatedNode = nodes.find(node => node.id === change.id);
+          if (updatedNode) {
+            //console.log('Updated node from Flow:', updatedNode);
+            onGraphOperation?.({ type: 'updateNode', node: updatedNode });
+          }
+        }
+      });
+    },
+    [onNodesChange, onGraphOperation, nodes]
+  );
+
+  const handleEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      onEdgesChange(changes);
+      changes.forEach(change => {
+        if (change.type === 'add') {
+          onGraphOperation?.({ type: 'addEdge', edge: change.item });
+        } else if (change.type === 'remove') {
+          onGraphOperation?.({ type: 'removeEdge', edgeId: change.id });
+        } else if (change.type === 'select') {
+          const updatedEdge = edges.find(edge => edge.id === change.id);
+          if (updatedEdge) {
+            onGraphOperation?.({ type: 'updateEdge', edge: updatedEdge });
+          }
+        }
+      });
+    },
+    [onEdgesChange, onGraphOperation, edges]
+  );
+
+  const handleConnect = useCallback(
+    (params: Connection) => {
+      const newEdge: Edge = {
+        id: `e${params.source}-${params.target}`,
+        source: params.source || '',
+        target: params.target || '',
+        animated: true,
+        style: { stroke: '#2a9d8f', strokeWidth: 2 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#2a9d8f',
+        },
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
+      onGraphOperation?.({ type: 'addEdge', edge: newEdge });
+    },
+    [setEdges, onGraphOperation]
+  );
+
+
   return (
     <div style={{ height: '100%' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChangeHandler}
-        onConnect={onConnect}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={handleEdgesChange}
+        onConnect={handleConnect}
         fitView
         attributionPosition="bottom-left"
         connectionLineType={ConnectionLineType.Bezier}

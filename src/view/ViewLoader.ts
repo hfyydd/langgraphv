@@ -1,40 +1,23 @@
-// src/view/ViewLoader.ts
-
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { GlobalState } from '../globalState';
 
 export class ViewLoader {
-  public static currentPanel?: vscode.WebviewPanel;
+  private static currentPanel?: vscode.WebviewPanel;
+  private disposables: vscode.Disposable[] = [];
 
-  private panel: vscode.WebviewPanel;
-  private context: vscode.ExtensionContext;
-  private disposables: vscode.Disposable[];
-
-  constructor(context: vscode.ExtensionContext) {
-    this.context = context;
-    this.disposables = [];
-
-    this.panel = vscode.window.createWebviewPanel('LangGraph Visualizer', 'LangGraph Visualizer', vscode.ViewColumn.One, {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      localResourceRoots: [vscode.Uri.file(path.join(this.context.extensionPath, 'out', 'app'))],
-    });
-
-    // render webview
+  private constructor(
+    private readonly panel: vscode.WebviewPanel,
+    private readonly context: vscode.ExtensionContext,
+    messageHandler: (message: any) => void
+  ) {
     this.renderWebview();
-
-    // listen messages from webview
+    this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     this.panel.webview.onDidReceiveMessage(
-      (message) => {
-        console.log('msg', message);
-      },
-      null,
-      this.disposables
-    );
-
-    this.panel.onDidDispose(
-      () => {
-        this.dispose();
+      message => {
+        //console.log('Received message in ViewLoader:', message);
+        //console.log('Current file path in ViewLoader:', GlobalState.currentFilePath);
+        messageHandler(message);
       },
       null,
       this.disposables
@@ -42,58 +25,56 @@ export class ViewLoader {
   }
 
   private renderWebview() {
-    const html = this.render();
-    this.panel.webview.html = html;
+    this.panel.webview.html = this.getWebviewContent();
   }
 
-  static showWebview(context: vscode.ExtensionContext) {
-    const cls = this;
-    const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
-    if (cls.currentPanel) {
-      cls.currentPanel.reveal(column);
+  static showWebview(context: vscode.ExtensionContext, messageHandler: (message: any) => void) {
+    const column = vscode.window.activeTextEditor?.viewColumn;
+    if (ViewLoader.currentPanel) {
+      ViewLoader.currentPanel.reveal(column);
     } else {
-      cls.currentPanel = new cls(context).panel;
+      const panel = vscode.window.createWebviewPanel(
+        'LangGraph Visualizer',
+        'LangGraph Visualizer',
+        column || vscode.ViewColumn.One,
+        {
+          enableScripts: true,
+          retainContextWhenHidden: true,
+          localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'out', 'app'))]
+        }
+      );
+      ViewLoader.currentPanel = panel;
+      new ViewLoader(panel, context, messageHandler);
     }
   }
 
   static postMessageToWebview(message: any) {
-    // post message from extension to webview
-    const cls = this;
-    cls.currentPanel?.webview.postMessage(message);
+    ViewLoader.currentPanel?.webview.postMessage(message);
   }
 
-  public dispose() {
+  private dispose() {
     ViewLoader.currentPanel = undefined;
-
-    // Clean up our resources
     this.panel.dispose();
-
-    while (this.disposables.length) {
-      const x = this.disposables.pop();
-      if (x) {
-        x.dispose();
-      }
-    }
+    this.disposables.forEach(d => d.dispose());
   }
 
-  render() {
+  private getWebviewContent(): string {
     const bundleScriptPath = this.panel.webview.asWebviewUri(
       vscode.Uri.file(path.join(this.context.extensionPath, 'out', 'app', 'bundle.js'))
     );
 
     return `
       <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>React App</title>
-        </head>
-    
-        <body>
-          <div id="root"></div>
-          <script src="${bundleScriptPath}"></script>
-        </body>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>LangGraph Visualizer</title>
+      </head>
+      <body>
+        <div id="root"></div>
+        <script src="${bundleScriptPath}"></script>
+      </body>
       </html>
     `;
   }

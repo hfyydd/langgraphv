@@ -1,29 +1,12 @@
-export interface Node {
-    id: string;
-    type: 'input' | 'output' | 'default';
-    position: { x: number; y: number };
-    data: {
-        label: string;
-        function?: string;
-    };
-}
-
-export interface Edge {
-    id: string;
-    source: string;
-    target: string;
-    data?: {
-        condition?: string;
-        conditionFunction?: string;
-    };
-}
+import { Edge, Node } from './types';
+import { GlobalState } from './globalState';
 
 export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges: Edge[] } {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     const lines = fileContent.split('\n');
 
-    let graphBuilderVariable: string | null = null;
+
     let stateClassName: string | null = null;
     let conditionalEdgeBuffer = '';
     let isParsingConditionalEdge = false;
@@ -32,13 +15,13 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
         // 查找 StateGraph 实例的变量名和 State 类名
         const stateGraphMatch = line.match(/(\w+)\s*=\s*StateGraph\((\w+)\)/);
         if (stateGraphMatch) {
-            graphBuilderVariable = stateGraphMatch[1];
+            GlobalState.graphBuilderVariable = stateGraphMatch[1];
             stateClassName = stateGraphMatch[2];
         }
 
-        if (graphBuilderVariable) {
+        if (GlobalState.graphBuilderVariable) {
             // 解析通过 add_node 添加的节点
-            const nodeRegex = new RegExp(`${graphBuilderVariable}\\.add_node\\("(\\w+)",\\s*(\\w+)`);
+            const nodeRegex = new RegExp(`${GlobalState.graphBuilderVariable}\\.add_node\\("(\\w+)",\\s*(\\w+)`);
             const nodeMatch = line.match(nodeRegex);
             if (nodeMatch) {
                 nodes.push({
@@ -50,7 +33,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
             }
 
             // 解析边，包括 START 和 END 的情况
-            const edgeRegex = new RegExp(`${graphBuilderVariable}\\.add_edge\\(\\s*([\\w"]+)\\s*,\\s*([\\w"]+)\\s*\\)`);
+            const edgeRegex = new RegExp(`${GlobalState.graphBuilderVariable}\\.add_edge\\(\\s*([\\w"]+)\\s*,\\s*([\\w"]+)\\s*\\)`);
             const edgeMatch = line.match(edgeRegex);
             if (edgeMatch) {
                 let source = edgeMatch[1].replace(/"/g, '');
@@ -88,7 +71,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
             }
 
             // 解析入口点
-            const entryPointMatch = line.match(`${graphBuilderVariable}\\.set_entry_point\\("(\\w+)"`);
+            const entryPointMatch = line.match(`${GlobalState.graphBuilderVariable}\\.set_entry_point\\("(\\w+)"`);
             if (entryPointMatch) {
                 if (!nodes.some(node => node.id === 'start')) {
                     nodes.push({
@@ -106,7 +89,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
             }
 
             // 解析结束点
-            const finishPointMatch = line.match(`${graphBuilderVariable}\\.set_finish_point\\("(\\w+)"`);
+            const finishPointMatch = line.match(`${GlobalState.graphBuilderVariable}\\.set_finish_point\\("(\\w+)"`);
             if (finishPointMatch) {
                 if (!nodes.some(node => node.id === 'end')) {
                     nodes.push({
@@ -124,7 +107,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
             }
 
             // 开始解析条件边
-            if (line.includes(`${graphBuilderVariable}.add_conditional_edges(`)) {
+            if (line.includes(`${GlobalState.graphBuilderVariable}.add_conditional_edges(`)) {
                 isParsingConditionalEdge = true;
                 conditionalEdgeBuffer = line;
             } else if (isParsingConditionalEdge) {

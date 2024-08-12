@@ -1,71 +1,42 @@
-# langgraphv README
+# LangGraph Visualizer
 
-This is the README for your extension "langgraphv". After writing up a brief description, we recommend including the following sections.
 
-## Features
+LangGraph Visualizer is a powerful VS Code extension designed to simplify the visualization and manipulation of LangGraph structures. This tool provides an intuitive interface for creating, editing, and visualizing LangGraph files directly within your VS Code environment.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### Features
 
-For example if there is an image subfolder under your extension project workspace:
+- **Interactive Graph Visualization**: Seamlessly view and interact with LangGraph structures in a visual format.
+- **Real-time Updates**: Changes in your Python code are immediately reflected in the visual representation.
+- **Graph Manipulation**: Add nodes, create connections, and modify your graph structure with ease.
+- **Automatic Layout**: Organize your graph layout vertically or horizontally with a single click.
+- **New Graph Template**: Quickly start new projects with a pre-configured graph template.
+- **Python Integration**: Works directly with your `.py` files, parsing LangGraph structures automatically.
 
-\!\[feature X\]\(images/feature-x.png\)
+### Getting Started
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+1. Install the LangGraph Visualizer extension from the VS Code Marketplace.
+2. Open a Python file containing a LangGraph structure.
+3. Use the command palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) and search for "Open LangGraph Visualizer" to launch the visualization.
+4. Alternatively, use the "New LangGraph" command to create a new graph file from a template.
 
-## Requirements
+### Usage
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- **Visualize Existing Graphs**: Open a Python file with a LangGraph structure and run the "Open LangGraph Visualizer" command.
+- **Create New Graphs**: Use the "New LangGraph" command to generate a new file with a basic graph structure.
+- **Edit Graphs**: Modify your graph visually or edit the Python code directly - changes are synced in real-time.
+- **Rearrange Layout**: Use the "Vertical Layout" or "Horizontal Layout" buttons to reorganize your graph.
+- **Add Nodes**: Click the "Add Node" button to insert new nodes into your graph.
 
-## Extension Settings
+### Requirements
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+- Visual Studio Code 1.60.0 or higher
+- Python 3.7 or higher
 
-For example:
+### Feedback and Contributions
 
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+We welcome your feedback and contributions! Please open an issue or submit a pull request on our [GitHub repository](https://github.com/hfyydd/langgraphv).
 
 ---
 
-## Following extension guidelines
+## 中文版本
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**

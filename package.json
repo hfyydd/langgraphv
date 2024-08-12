@@ -2,9 +2,16 @@
   "name": "langgraphv",
   "displayName": "langgraphv",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "publisher": "hfloveyy",
   "engines": {
     "vscode": "^1.91.0"
+  },
+  "license": "MIT",
+  "icon": "images/logo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hfyydd/langgraphv.git"
   },
   "categories": [
     "Other"

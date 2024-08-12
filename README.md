@@ -36,7 +36,4 @@ LangGraph Visualizer is a powerful VS Code extension designed to simplify the vi
 
 We welcome your feedback and contributions! Please open an issue or submit a pull request on our [GitHub repository](https://github.com/hfyydd/langgraphv).
 
----
-
-## 中文版本
 

@@ -1,9 +1,10 @@
+// flow.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import dagre from 'dagre';
 import {
-  ReactFlow, 
-  Controls, 
-  Background, 
+  ReactFlow,
+  Controls,
+  Background,
   Node, Edge,
   useNodesState,
   useEdgesState,
@@ -18,16 +19,17 @@ import {
   NodeTypes
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import {nodeTypes} from './node/BaseNode';
+import { nodeTypes } from './node/BaseNode';
+import { edgeTypes } from './edge/CustomEdge';
 
 interface FlowProps {
   initialNodes: Node[];
   initialEdges: Edge[];
-  onGraphChange?: (nodes: Node[], edges: Edge[]) => void; 
+  onGraphChange?: (nodes: Node[], edges: Edge[]) => void;
   onGraphOperation?: (operation: GraphOperation) => void;
 }
 
-type GraphOperation = 
+type GraphOperation =
   | { type: 'addNode'; node: Node }
   | { type: 'removeNode'; nodeId: string }
   | { type: 'addEdge'; edge: Edge }
@@ -106,7 +108,7 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
       id: `node_${nodes.length + 1}`,
       data: { label: `node${nodes.length + 1}` },
       position: { x: Math.random() * 500, y: Math.random() * 500 },
-      type: 'default',
+      type: 'custom',
     };
     const updatedNodes = [...nodes, newNode];
     setNodes(updatedNodes);
@@ -116,14 +118,7 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
   }, [nodes, edges, onGraphChange, onGraphOperation]);
 
 
-  const edgeOptions = {
-    animated: true,
-    style: { stroke: '#2a9d8f', strokeWidth: 2 },
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-      color: '#2a9d8f',
-    },
-  };
+
 
   // Expose updateGraph function to window
   const updateGraph = useCallback((newNodes: Node[], newEdges: Edge[]) => {
@@ -148,7 +143,7 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
       changes.forEach(change => {
         if (change.type === 'remove') {
           onGraphOperation?.({ type: 'removeNode', nodeId: change.id });
-        } 
+        }
         else if (change.type === 'position') {
           const updatedNode = nodes.find(node => node.id === change.id);
           if (updatedNode) {
@@ -201,6 +196,16 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
     [setEdges, onGraphOperation]
   );
 
+  const edgeOptions = {
+    animated: true,
+    style: { strokeWidth: 2 },
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: '#2a9d8f',
+    },
+    type: 'custom-edge',
+  };
+
 
   return (
     <div style={{ height: '100%' }}>
@@ -208,6 +213,7 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}

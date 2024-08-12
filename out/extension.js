@@ -85,7 +85,6 @@ function activate(context) {
         }
     };
     const messageHandler = (message) => {
-        console.log('Received message in extension:', message);
         if (message.type === 'graphOperation' && globalState_1.GlobalState.currentFilePath) {
             //console.log('Processing graph operation:', message.operation);
             (0, modifyLangGraphFile_1.modifyLangGraphFile)(globalState_1.GlobalState.currentFilePath, message.operation);

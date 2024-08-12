@@ -43,7 +43,6 @@ function App() {
   }, []);
 
   const handleGraphOperation = useCallback((operation: any) => {
-    console.log('Graph operation:', operation);
     vscode?.postMessage({
       type: 'graphOperation',
       operation: operation

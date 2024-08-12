@@ -65,7 +65,6 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     const messageHandler = (message: any) => {
-        console.log('Received message in extension:', message);
         if (message.type === 'graphOperation' && GlobalState.currentFilePath) {
             //console.log('Processing graph operation:', message.operation);
             modifyLangGraphFile(GlobalState.currentFilePath, message.operation);

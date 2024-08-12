@@ -15,8 +15,6 @@ export class ViewLoader {
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     this.panel.webview.onDidReceiveMessage(
       message => {
-        //console.log('Received message in ViewLoader:', message);
-        //console.log('Current file path in ViewLoader:', GlobalState.currentFilePath);
         messageHandler(message);
       },
       null,

@@ -23,9 +23,6 @@ const CustomEdge: React.FC<EdgeProps> = ({
     targetPosition,
   });
 
-  useEffect(() => {
-    console.log('CustomEdge selected', selected);
-  }, [selected]);
 
   return (
     <path

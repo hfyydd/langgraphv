@@ -107,14 +107,10 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
         }
     });
 
-    console.log('nodes', nodes);
-    console.log('edges', edges);
-
     return { nodes, edges };
 }
 
 function parseAddNode(content: string, nodes: Node[], index: number) {
-    console.log('Parsing add_node:', content);
 
     const nodeMatch = content.match(/"(\w+)",\s*(\w+)/);
     if (nodeMatch) {
@@ -135,14 +131,12 @@ function parseAddNode(content: string, nodes: Node[], index: number) {
 }
 
 function parseConditionalEdge(content: string, nodes: Node[], edges: Edge[]) {
-    console.log('Parsing conditional edge:', content);
 
     // 移除以 '#' 开头的整行注释，保留其他行
     const contentWithoutComments = content.split('\n')
         .filter(line => !line.trim().startsWith('#'))
         .join('\n');
 
-    console.log('contentWithoutComments', contentWithoutComments);
 
     // 提取源节点
     const sourceNodeMatch = contentWithoutComments.match(/\(\s*"?([^",]+)"?\s*,/);
@@ -155,8 +149,6 @@ function parseConditionalEdge(content: string, nodes: Node[], edges: Edge[]) {
         let sourceNode = sourceNodeMatch[1].trim().replace(/['"]/g, '');
         const conditionFunction = conditionFunctionMatch[1];
 
-        console.log('sourceNode', sourceNode);
-        console.log('conditionFunction', conditionFunction);
 
         // 处理 START 特殊情况
         if (sourceNode === 'START') {

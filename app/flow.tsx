@@ -147,7 +147,6 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
         else if (change.type === 'position') {
           const updatedNode = nodes.find(node => node.id === change.id);
           if (updatedNode) {
-            //console.log('Updated node from Flow:', updatedNode);
             onGraphOperation?.({ type: 'updateNode', node: updatedNode });
           }
         }

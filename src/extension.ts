@@ -47,7 +47,7 @@ graph = graph_builder.compile()
 `;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Congratulations, your extension "langgraphv" is now active!');
+    console.log('Congratulations, "LangGraph Visualizer" is now active!');
 
     const watcher = vscode.workspace.createFileSystemWatcher('**/*.py');
 
@@ -66,7 +66,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     const messageHandler = (message: any) => {
         if (message.type === 'graphOperation' && GlobalState.currentFilePath) {
-            //console.log('Processing graph operation:', message.operation);
             modifyLangGraphFile(GlobalState.currentFilePath, message.operation);
         }
     };

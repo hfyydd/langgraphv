@@ -39,7 +39,6 @@ function App() {
   const handleGraphChange = useCallback((updatedNodes: Node[], updatedEdges: Edge[]) => {
     setNodes(updatedNodes);
     setEdges(updatedEdges);
-    //console.log('Graph updated:', updatedNodes, updatedEdges);
   }, []);
 
   const handleGraphOperation = useCallback((operation: any) => {

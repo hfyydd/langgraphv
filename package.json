@@ -2,7 +2,7 @@
   "name": "langgraphv",
   "displayName": "LangGraph Visualizer",
   "description": "LangGraph Visualizer support for VS Code",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "publisher": "hfloveyy",
   "engines": {
     "vscode": "^1.91.0"
@@ -22,15 +22,11 @@
     "commands": [
       {
         "command": "langgraphv.openVisualizer",
-        "title": "Open Langgraph Visualizer"
+        "title": "LangGraphV: Open Langgraph Visualizer"
       },
       {
         "command": "langgraphv.newGraph",
-        "title": "LangGraph: New Graph"
-      },
-      {
-        "command": "langgraphv.openPythonFile",
-        "title": "LangGraph: Open Python File"
+        "title": "LangGraphV: New Graph"
       }
     ]
   },

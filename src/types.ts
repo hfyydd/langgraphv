@@ -5,6 +5,7 @@ export interface Node {
     data: {
         label: string;
         function?: string;
+        codeSnippet?: string;
     };
 }
 

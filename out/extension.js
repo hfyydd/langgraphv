@@ -95,7 +95,6 @@ function activate(context) {
             updateCurrentFilePath(editor.document);
             ViewLoader_1.ViewLoader.showWebview(context, messageHandler);
             const parsedGraph = (0, parser_1.parseLangGraphFile)(editor.document.getText());
-            console.log(parsedGraph);
             setTimeout(() => {
                 ViewLoader_1.ViewLoader.postMessageToWebview({ type: 'updateGraph', data: parsedGraph });
             }, 1000);

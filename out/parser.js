@@ -13,7 +13,36 @@ function parseLangGraphFile(fileContent) {
     let addNodeBuffer = '';
     let isParsingForLoop = false;
     let forLoopBuffer = '';
+    // New: Store function definitions
+    const functionDefinitions = {};
+    let currentFunction = '';
+    let functionBuffer = '';
+    let functionIndentLevel = 0;
     lines.forEach((line, index) => {
+        const trimmedLine = line.trim();
+        const indentLevel = line.search(/\S|$/) / 4;
+        // New: Capture function definitions
+        if (trimmedLine.startsWith('def ')) {
+            if (currentFunction) {
+                // Save the previous function if there was one
+                functionDefinitions[currentFunction] = functionBuffer.trim();
+            }
+            currentFunction = trimmedLine.split('(')[0].split(' ')[1];
+            functionBuffer = line + '\n';
+            functionIndentLevel = indentLevel;
+        }
+        else if (currentFunction) {
+            if (indentLevel > functionIndentLevel || (indentLevel === functionIndentLevel && trimmedLine.startsWith(')'))) {
+                // This line is part of the current function
+                functionBuffer += line + '\n';
+            }
+            else {
+                // Function has ended
+                functionDefinitions[currentFunction] = functionBuffer.trim();
+                currentFunction = '';
+                functionBuffer = '';
+            }
+        }
         // 查找 StateGraph 实例的变量名和 State 类名
         const stateGraphMatch = line.match(/(\w+)\s*=\s*StateGraph\((\w+)\)/);
         if (stateGraphMatch) {
@@ -30,7 +59,7 @@ function parseLangGraphFile(fileContent) {
                 addNodeBuffer += line + '\n';
                 if (line.trim().endsWith(')')) {
                     isParsingAddNode = false;
-                    parseAddNode(addNodeBuffer.trim(), nodes, index);
+                    parseAddNode(addNodeBuffer.trim(), nodes, index, functionDefinitions);
                     addNodeBuffer = '';
                 }
             }
@@ -39,11 +68,17 @@ function parseLangGraphFile(fileContent) {
                 const nodeRegex = new RegExp(`${globalState_1.GlobalState.graphBuilderVariable}\\.add_node\\("(\\w+)",\\s*(\\w+)`);
                 const nodeMatch = line.match(nodeRegex);
                 if (nodeMatch) {
+                    const nodeId = nodeMatch[1];
+                    const nodeFunction = nodeMatch[2];
                     nodes.push({
-                        id: nodeMatch[1],
+                        id: nodeId,
                         type: 'custom',
                         position: { x: index * 150, y: index * 100 },
-                        data: { label: nodeMatch[1], function: nodeMatch[2] }
+                        data: {
+                            label: nodeId,
+                            function: nodeFunction,
+                            codeSnippet: functionDefinitions[nodeFunction] || 'Code not found'
+                        }
                     });
                 }
             }
@@ -117,7 +152,7 @@ function parseLangGraphFile(fileContent) {
     });
     return { nodes, edges };
 }
-function parseAddNode(content, nodes, index) {
+function parseAddNode(content, nodes, index, functionDefinitions) {
     const nodeMatch = content.match(/"(\w+)",\s*(\w+)/);
     if (nodeMatch) {
         const [, nodeId, nodeFunction] = nodeMatch;
@@ -125,7 +160,7 @@ function parseAddNode(content, nodes, index) {
             id: nodeId,
             type: 'custom',
             position: { x: index * 150, y: index * 100 },
-            data: { label: nodeId, function: nodeFunction }
+            data: { label: nodeId, function: nodeFunction, codeSnippet: functionDefinitions[nodeFunction] || 'Code not found' }
         };
         nodes.push(newNode);
     }

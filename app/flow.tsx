@@ -1,5 +1,5 @@
 // flow.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import dagre from 'dagre';
 import {
   ReactFlow,
@@ -16,10 +16,11 @@ import {
   addEdge,
   NodeChange,
   applyNodeChanges,
-  NodeTypes
+  NodeTypes,
+  NodeProps
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { nodeTypes } from './node/BaseNode';
+import { BaseNode, DefaultNode, nodeTypes } from './node/BaseNode';
 import { edgeTypes } from './edge/CustomEdge';
 
 interface FlowProps {
@@ -48,7 +49,9 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
   dagreGraph.setGraph({ rankdir: direction });
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    const width = node.data.isExpanded ? 400 : nodeWidth;
+    const height = node.data.isExpanded ? 200 : nodeHeight;
+    dagreGraph.setNode(node.id, { width, height });
   });
 
   edges.forEach((edge) => {
@@ -60,11 +63,13 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
   return {
     nodes: nodes.map((node) => {
       const nodeWithPosition = dagreGraph.node(node.id);
+      const width = node.data.isExpanded ? 400 : nodeWidth;
+      const height = node.data.isExpanded ? 200 : nodeHeight;
       return {
         ...node,
         position: {
-          x: nodeWithPosition.x - nodeWidth / 2,
-          y: nodeWithPosition.y - nodeHeight / 2,
+          x: nodeWithPosition.x - width / 2,
+          y: nodeWithPosition.y - height / 2,
         },
       };
     }),
@@ -84,6 +89,29 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
   }, [initialNodes, initialEdges]);
+
+  const handleNodeExpand = useCallback((nodeId: string, isExpanded: boolean) => {
+    setNodes((prevNodes) => {
+      const updatedNodes = prevNodes.map(node =>
+        node.id === nodeId ? { ...node, data: { ...node.data, isExpanded } } : node
+      );
+
+      // 重新计算布局
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        updatedNodes,
+        edges
+      );
+
+      // 如果有onGraphChange回调,调用它
+      onGraphChange?.(layoutedNodes, layoutedEdges);
+
+      // 如果有onGraphOperation回调,为更新的节点触发它
+      onGraphOperation?.({ type: 'updateNode', node: layoutedNodes.find(n => n.id === nodeId)! });
+
+      return layoutedNodes;
+    });
+  }, [edges, onGraphChange, onGraphOperation]);
+
 
   const onLayout = useCallback(
     (direction: 'TB' | 'LR') => {
@@ -205,13 +233,27 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
     type: 'custom-edge',
   };
 
+  const nodeTypesWithExpand = useMemo(() => ({
+    ...nodeTypes,
+    custom: (props: NodeProps<BaseNode>) => (
+      <DefaultNode 
+        {...props} 
+        data={{
+          ...props.data,
+          isExpanded: props.data.isExpanded || false
+        }}
+        onExpand={handleNodeExpand} 
+      />
+    ),
+  }), [handleNodeExpand]);
+
 
   return (
     <div style={{ height: '100%' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={nodeTypes}
+        nodeTypes={nodeTypesWithExpand}
         edgeTypes={edgeTypes}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}

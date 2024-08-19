@@ -50,9 +50,9 @@ function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      <Flow 
-        initialNodes={nodes} 
-        initialEdges={edges} 
+      <Flow
+        initialNodes={nodes}
+        initialEdges={edges}
         onGraphChange={handleGraphChange}
         onGraphOperation={handleGraphOperation}
       />

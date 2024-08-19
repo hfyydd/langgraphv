@@ -175,7 +175,7 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
         else if (change.type === 'position') {
           const updatedNode = nodes.find(node => node.id === change.id);
           if (updatedNode) {
-            onGraphOperation?.({ type: 'updateNode', node: updatedNode });
+            //onGraphOperation?.({ type: 'updateNode', node: updatedNode });
           }
         }
       });
@@ -223,6 +223,21 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
     [setEdges, onGraphOperation]
   );
 
+  const handleCodeSnippetChange = useCallback((id: string, newCodeSnippet: string) => {
+    setNodes(prevNodes => {
+      const updatedNodes = prevNodes.map(node => 
+        node.id === id ? { ...node, data: { ...node.data, codeSnippet: newCodeSnippet } } : node
+      );
+      
+      const updatedNode = updatedNodes.find(node => node.id === id);
+      if (updatedNode) {
+        onGraphOperation?.({ type: 'updateNode', node: updatedNode });
+      }
+      
+      return updatedNodes;
+    });
+  }, [setNodes, onGraphOperation]);
+
   const edgeOptions = {
     animated: true,
     style: { strokeWidth: 2 },
@@ -240,7 +255,8 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
         {...props} 
         data={{
           ...props.data,
-          isExpanded: props.data.isExpanded || false
+          isExpanded: props.data.isExpanded || false,
+          onCodeSnippetChange: handleCodeSnippetChange
         }}
         onExpand={handleNodeExpand} 
       />
@@ -276,3 +292,5 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
 }
 
 export default Flow;
+
+

@@ -27,7 +27,7 @@ export function modifyLangGraphFile(filePath: string, operation: GraphOperation)
                 ];
                 const newNodeLine = `${GlobalState.graphBuilderVariable}.add_node("${operation.node.id}", ${functionName})  # Add node for ${operation.node.data.label}`;
 
-                // 找到最后一个函数定义的结束位置
+                // 找到最后���义的结束位置
                 let lastFunctionEndIndex = -1;
                 let insideFunction = false;
                 let indentLevel = 0;
@@ -57,7 +57,7 @@ export function modifyLangGraphFile(filePath: string, operation: GraphOperation)
                 }
 
                 if (lastFunctionEndIndex === -1) {
-                    // 如果没有找到函数定义，就在文件末尾添加
+                    // ��果没有找到函数定义，就在文件末尾添加
                     lines.push(...newFunctionLines);
                     lines.push(newNodeLine);
                 } else {
@@ -116,7 +116,7 @@ export function modifyLangGraphFile(filePath: string, operation: GraphOperation)
                     for (let i = edgesToRemove.length - 1; i >= 0; i--) {
                         lines.splice(edgesToRemove[i], 1);
                     }
-                    
+
                 }
 
             }
@@ -131,7 +131,7 @@ export function modifyLangGraphFile(filePath: string, operation: GraphOperation)
             if (operation.edgeId) {
                 // 移除开头的 'e' 并分割 source 和 target
                 const [source, target] = operation.edgeId.replace(/^e/, '').split('-');
-                
+
 
                 // 查找匹配的 add_edge 语句
                 const edgeIndex = lines.findIndex(line => {
@@ -149,7 +149,44 @@ export function modifyLangGraphFile(filePath: string, operation: GraphOperation)
             }
             break;
         case 'updateNode':
-            // Handle node updates (e.g., position changes) if needed
+            if (operation.node?.id && operation.node.data?.function) {
+                console.log('updateNode', operation.node);
+                const node = operation.node;
+                const oldFunctionName = node.data.function;
+                const newFunctionName = node.data.label.replace(/\s+/g, '_').toLowerCase();
+
+                // 找到旧函数的开始和结束位置
+                let functionStartIndex = -1;
+                let functionEndIndex = -1;
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith(`def ${oldFunctionName}(`)) {
+                        functionStartIndex = i;
+                        for (let j = i + 1; j < lines.length; j++) {
+                            if (j === lines.length - 1 || (lines[j].trim() !== '' && !lines[j].startsWith(' '))) {
+                                functionEndIndex = j - 1;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if (functionStartIndex !== -1 && functionEndIndex !== -1) {
+                    // 检查 codeSnippet 是否存在
+                    const newFunctionLines = node.data.codeSnippet
+                        ? node.data.codeSnippet.split('\n')
+                        : [`def ${newFunctionName}(state):`, '    pass'];
+
+                    // 一次性替换整个函数
+                    lines.splice(functionStartIndex, functionEndIndex - functionStartIndex + 1, ...newFunctionLines);
+
+                    // 更新 add_node 行
+                    const nodeIndex = lines.findIndex(line => line.includes(`add_node("${node.id}"`));
+                    if (nodeIndex !== -1) {
+                        lines[nodeIndex] = `${GlobalState.graphBuilderVariable}.add_node("${node.id}", ${newFunctionName})  # Add node for ${node.data.label}`;
+                    }
+                }
+            }
             break;
         case 'updateEdge':
             // Handle edge updates if needed

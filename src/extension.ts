@@ -55,15 +55,6 @@ export function activate(context: vscode.ExtensionContext) {
         GlobalState.currentFilePath = document?.languageId === 'python' ? document.uri.fsPath : undefined;
     };
 
-    const handleFileChange = async (uri: vscode.Uri) => {
-        const document = await vscode.workspace.openTextDocument(uri);
-        if (document.languageId === 'python') {
-            updateCurrentFilePath(document);
-            const parsedGraph = parseLangGraphFile(document.getText());
-            ViewLoader.postMessageToWebview({ type: 'updateGraph', data: parsedGraph });
-        }
-    };
-
     const messageHandler = (message: any) => {
         if (message.type === 'graphOperation' && GlobalState.currentFilePath) {
             modifyLangGraphFile(GlobalState.currentFilePath, message.operation);

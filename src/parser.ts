@@ -66,7 +66,9 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
             } else {
                 // 解析单行 add_node
                 const nodeRegex = new RegExp(`${GlobalState.graphBuilderVariable}\\.add_node\\("(\\w+)",\\s*(\\w+)`);
-                const nodeMatch = line.match(nodeRegex);
+                // 移除注释
+                const lineWithoutComments = line.split('#')[0].trim();
+                const nodeMatch = lineWithoutComments.match(nodeRegex);
                 if (nodeMatch) {
                     const nodeId = nodeMatch[1];
                     const nodeFunction = nodeMatch[2];

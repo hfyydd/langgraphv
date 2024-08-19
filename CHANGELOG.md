@@ -11,3 +11,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [0.0.5] - 2024-08-19
 
 - Added support for `__start__` and `__end__`
+
+## [0.0.6] -2024-08-20
+
+- Added ability to edit code by clicking on nodes

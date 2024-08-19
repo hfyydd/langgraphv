@@ -3,7 +3,7 @@ declare global {
     updateGraphFlow?: (nodes: any[], edges: any[]) => void;
   }
 }
-import { FaEdit,FaSave,FaCircle,FaTimes } from 'react-icons/fa';
+import { FaEdit, FaSave, FaCircle, FaTimes } from 'react-icons/fa';
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { NodeProps, Node } from '@xyflow/react';
@@ -16,6 +16,7 @@ export type BaseNode = Node<{
   function?: string;
   codeSnippet?: string;
   isExpanded?: boolean;
+  onCodeSnippetChange?: (id: string, newCodeSnippet: string) => void;
 }>;
 
 // 定义一个好看的颜色数组
@@ -56,6 +57,9 @@ const CodeEditor: React.FC<{
         customStyle={{
           ...sharedStyles,
           background: 'transparent',
+          position: 'relative',
+          zIndex: 1,
+          pointerEvents: 'none',
         }}
       >
         {localCode}
@@ -70,6 +74,7 @@ const CodeEditor: React.FC<{
           color: 'transparent',
           caretColor: 'white',
           WebkitTextFillColor: 'transparent',
+          zIndex: 2,
         }}
         autoFocus
       />
@@ -120,16 +125,19 @@ export const StartNode = (props: NodeProps<BaseNode>) => {
   );
 };
 
-export const DefaultNode = (props: NodeProps<BaseNode>& { 
-  onExpand: (nodeId: string, isExpanded: boolean) => void 
+export const DefaultNode = (props: NodeProps<BaseNode> & {
+  onExpand: (nodeId: string, isExpanded: boolean) => void
 }) => {
   const { id, data, isConnectable } = props;
-  const { label, function: nodeFunction, codeSnippet: initialCodeSnippet, isExpanded } = data;
+  const { label, function: nodeFunction, codeSnippet: initialCodeSnippet, isExpanded, onCodeSnippetChange } = data;
   const { isHovered, hoverProps } = useHover();
   const [isEditing, setIsEditing] = useState(false);
   const [codeSnippet, setCodeSnippet] = useState(initialCodeSnippet || '');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const randomColor = useMemo(() => nodeColors[Math.floor(Math.random() * nodeColors.length)], []);
+  
+  console.log('codeSnippet', codeSnippet);
+  
   const handleCodeChange = useCallback((newCode: string) => {
     setCodeSnippet(newCode);
     setHasUnsavedChanges(true);
@@ -139,17 +147,14 @@ export const DefaultNode = (props: NodeProps<BaseNode>& {
     event.stopPropagation();
     setIsEditing(false);
     setHasUnsavedChanges(false);
-    // if (typeof window.updateGraphFlow === 'function') {
-    //   window.updateGraphFlow([{
-    //     id,
-    //     data: { ...data, codeSnippet },
-    //     type: 'custom',
-    //   }], []);
-    // }
-  }, [id, data, codeSnippet]);
+    if (onCodeSnippetChange) {
+      onCodeSnippetChange(id, codeSnippet);
+    }
+  }, [id, data, codeSnippet, onCodeSnippetChange]);
 
 
   const handleDoubleClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
     if (!isEditing) {
       props.onExpand(id, !isExpanded);
     }
@@ -174,8 +179,8 @@ export const DefaultNode = (props: NodeProps<BaseNode>& {
         onDoubleClick={handleDoubleClick}
         className={`cursor-pointer transition-all duration-200 ${isExpanded ? 'shadow-lg' : ''}`}
       >
-        <BaseNodeWrapper 
-          className={`${randomColor} ${isExpanded ? 'w-96' : ''}`} 
+        <BaseNodeWrapper
+          className={`${randomColor} ${isExpanded ? 'w-96' : ''}`}
           isHovered={isHovered}
         >
           <Handle
@@ -187,8 +192,8 @@ export const DefaultNode = (props: NodeProps<BaseNode>& {
           <div className="relative">
             {isExpanded && (
               <div className="absolute top-0 right-0 flex items-center">
-                <FaCircle 
-                  className={`mr-2 ${hasUnsavedChanges ? 'text-red-500' : 'text-green-500'}`} 
+                <FaCircle
+                  className={`mr-2 ${hasUnsavedChanges ? 'text-red-500' : 'text-green-500'}`}
                   size={12}
                 />
                 {isEditing ? (
@@ -226,13 +231,13 @@ export const DefaultNode = (props: NodeProps<BaseNode>& {
                 <CodeEditor
                   code={codeSnippet}
                   onChange={handleCodeChange}
-                  onBlur={() => {}}
+                  onBlur={() => { }}
                 />
               ) : (
-                <SyntaxHighlighter 
-                  language="python" 
-                  style={docco} 
-                  customStyle={{fontSize: '12px', background: 'transparent'}}
+                <SyntaxHighlighter
+                  language="python"
+                  style={docco}
+                  customStyle={{ fontSize: '12px', background: 'transparent' }}
                 >
                   {codeSnippet}
                 </SyntaxHighlighter>

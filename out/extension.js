@@ -76,14 +76,6 @@ function activate(context) {
     const updateCurrentFilePath = (document) => {
         globalState_1.GlobalState.currentFilePath = document?.languageId === 'python' ? document.uri.fsPath : undefined;
     };
-    const handleFileChange = async (uri) => {
-        const document = await vscode.workspace.openTextDocument(uri);
-        if (document.languageId === 'python') {
-            updateCurrentFilePath(document);
-            const parsedGraph = (0, parser_1.parseLangGraphFile)(document.getText());
-            ViewLoader_1.ViewLoader.postMessageToWebview({ type: 'updateGraph', data: parsedGraph });
-        }
-    };
     const messageHandler = (message) => {
         if (message.type === 'graphOperation' && globalState_1.GlobalState.currentFilePath) {
             (0, modifyLangGraphFile_1.modifyLangGraphFile)(globalState_1.GlobalState.currentFilePath, message.operation);

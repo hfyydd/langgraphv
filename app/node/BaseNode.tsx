@@ -9,6 +9,7 @@ import { Handle, Position } from '@xyflow/react';
 import { NodeProps, Node } from '@xyflow/react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import Editor from "@monaco-editor/react";
 
 export type BaseNode = Node<{
   label: string;
@@ -34,51 +35,24 @@ const CodeEditor: React.FC<{
   onChange: (code: string) => void;
   onBlur: () => void;
 }> = ({ code, onChange, onBlur }) => {
-  const [localCode, setLocalCode] = useState(code);
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setLocalCode(e.target.value);
-    onChange(e.target.value);
-  };
-
-  const sharedStyles = {
-    fontSize: '12px',
-    padding: '0.5rem',
-    margin: 0,
-    lineHeight: '1.5',
-    fontFamily: 'monospace',
-  };
-
   return (
-    <div className="relative">
-      <SyntaxHighlighter
-        language="python"
-        style={docco}
-        customStyle={{
-          ...sharedStyles,
-          background: 'transparent',
-          position: 'relative',
-          zIndex: 1,
-          pointerEvents: 'none',
-        }}
-      >
-        {localCode}
-      </SyntaxHighlighter>
-      <textarea
-        value={localCode}
-        onChange={handleChange}
-        onBlur={onBlur}
-        className="absolute inset-0 w-full h-full bg-transparent border-none resize-none focus:outline-none"
-        style={{
-          ...sharedStyles,
-          color: 'transparent',
-          caretColor: 'white',
-          WebkitTextFillColor: 'transparent',
-          zIndex: 2,
-        }}
-        autoFocus
-      />
-    </div>
+    <Editor
+      height="150px"
+      defaultLanguage="python"
+      defaultValue={code}
+      onChange={(value) => onChange(value || '')}
+      onMount={(editor) => {
+        editor.onDidBlurEditorWidget(() => onBlur());
+      }}
+      options={{
+        minimap: { enabled: false },
+        fontSize: 10,
+        lineNumbers: 'off',
+        scrollBeyondLastLine: false,
+        folding: true,
+        theme: 'vs-dark',
+      }}
+    />
   );
 };
 
@@ -226,12 +200,12 @@ export const DefaultNode = (props: NodeProps<BaseNode> & {
             <div className="text-xs">{nodeFunction}</div>
           </div>
           {isExpanded && (
-            <div className="mt-2 text-left">
+            <div className="mt-2 text-left h-40"> {/* 增加高度以适应编辑器 */}
               {isEditing ? (
                 <CodeEditor
                   code={codeSnippet}
                   onChange={handleCodeChange}
-                  onBlur={() => { }}
+                  onBlur={() => {}}
                 />
               ) : (
                 <SyntaxHighlighter

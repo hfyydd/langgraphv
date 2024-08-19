@@ -11,6 +11,8 @@ function parseLangGraphFile(fileContent) {
     let isParsingConditionalEdge = false;
     let isParsingAddNode = false;
     let addNodeBuffer = '';
+    let isParsingForLoop = false;
+    let forLoopBuffer = '';
     lines.forEach((line, index) => {
         // 查找 StateGraph 实例的变量名和 State 类名
         const stateGraphMatch = line.match(/(\w+)\s*=\s*StateGraph\((\w+)\)/);
@@ -51,11 +53,11 @@ function parseLangGraphFile(fileContent) {
             if (edgeMatch) {
                 let source = edgeMatch[1].replace(/"/g, '');
                 let target = edgeMatch[2].replace(/"/g, '');
-                if (source === 'START') {
+                if (source === 'START' || source === '__start__') {
                     source = 'start';
                     ensureNodeExists(nodes, 'start', 'start', { x: 0, y: 0 });
                 }
-                if (target === 'END') {
+                if (target === 'END' || target === '__end__') {
                     target = 'end';
                     ensureNodeExists(nodes, 'end', 'end', { x: (index + 1) * 150, y: 100 });
                 }
@@ -98,14 +100,24 @@ function parseLangGraphFile(fileContent) {
                     conditionalEdgeBuffer = '';
                 }
             }
+            // 开始解析 for 循环
+            if (line.trim().startsWith('for ') && line.includes(globalState_1.GlobalState.graphBuilderVariable)) {
+                isParsingForLoop = true;
+                forLoopBuffer = line + '\n';
+            }
+            else if (isParsingForLoop) {
+                forLoopBuffer += line + '\n';
+                if (line.trim().endsWith(')') || !line.trim().startsWith(' ')) {
+                    isParsingForLoop = false;
+                    parseForLoop(forLoopBuffer.trim(), nodes, edges, index);
+                    forLoopBuffer = '';
+                }
+            }
         }
     });
-    console.log('nodes', nodes);
-    console.log('edges', edges);
     return { nodes, edges };
 }
 function parseAddNode(content, nodes, index) {
-    console.log('Parsing add_node:', content);
     const nodeMatch = content.match(/"(\w+)",\s*(\w+)/);
     if (nodeMatch) {
         const [, nodeId, nodeFunction] = nodeMatch;
@@ -122,12 +134,10 @@ function parseAddNode(content, nodes, index) {
     }
 }
 function parseConditionalEdge(content, nodes, edges) {
-    console.log('Parsing conditional edge:', content);
     // 移除以 '#' 开头的整行注释，保留其他行
     const contentWithoutComments = content.split('\n')
         .filter(line => !line.trim().startsWith('#'))
         .join('\n');
-    console.log('contentWithoutComments', contentWithoutComments);
     // 提取源节点
     const sourceNodeMatch = contentWithoutComments.match(/\(\s*"?([^",]+)"?\s*,/);
     // 提取条件函数
@@ -137,10 +147,8 @@ function parseConditionalEdge(content, nodes, edges) {
     if (sourceNodeMatch && conditionFunctionMatch && mappingMatch) {
         let sourceNode = sourceNodeMatch[1].trim().replace(/['"]/g, '');
         const conditionFunction = conditionFunctionMatch[1];
-        console.log('sourceNode', sourceNode);
-        console.log('conditionFunction', conditionFunction);
         // 处理 START 特殊情况
-        if (sourceNode === 'START') {
+        if (sourceNode === 'START' || sourceNode === '__start__') {
             sourceNode = 'start';
             ensureNodeExists(nodes, 'start', 'start', { x: 0, y: 0 });
         }
@@ -151,7 +159,7 @@ function parseConditionalEdge(content, nodes, edges) {
             const [condition, target] = mapping.split(':').map(s => s.trim().replace(/['"]/g, ''));
             let targetNode = target;
             // 处理 END 特殊情况
-            if (targetNode === 'END') {
+            if (targetNode === 'END' || targetNode === '__end__') {
                 targetNode = 'end';
                 ensureNodeExists(nodes, 'end', 'end', { x: (nodes.length + 1) * 150, y: 100 });
             }
@@ -162,7 +170,7 @@ function parseConditionalEdge(content, nodes, edges) {
                 target: targetNode,
                 data: { condition: condition, conditionFunction: conditionFunction }
             });
-            // 如果目标节点不存在且不是 start 或 end，添加一个新的节点
+            // 如果目标节点不存在且不是 start 或 end，添加一个新的���点
             if (!['start', 'end'].includes(targetNode)) {
                 ensureNodeExists(nodes, targetNode, 'custom', { x: (nodes.length + 1) * 150, y: (nodes.length + 1) * 100 });
             }
@@ -170,6 +178,37 @@ function parseConditionalEdge(content, nodes, edges) {
     }
     else {
         console.error('Failed to parse conditional edge:', content);
+    }
+}
+function parseForLoop(content, nodes, edges, startIndex) {
+    const lines = content.split('\n');
+    const rangeMatch = lines[0].match(/for\s+\w+\s+in\s+range\((\d+)\):/);
+    if (rangeMatch) {
+        const loopCount = parseInt(rangeMatch[1]);
+        for (let i = 0; i < loopCount; i++) {
+            lines.slice(1).forEach(line => {
+                const nodeMatch = line.match(/add_node\(f"(\w+)_{\w+}",\s*(\w+)\)/);
+                if (nodeMatch) {
+                    const nodeId = `${nodeMatch[1]}_${i}`;
+                    nodes.push({
+                        id: nodeId,
+                        type: 'custom',
+                        position: { x: (startIndex + i) * 150, y: (startIndex + i) * 100 },
+                        data: { label: nodeId, function: nodeMatch[2] }
+                    });
+                }
+                const edgeMatch = line.match(/add_edge\(f"(\w+)_{\w+}",\s*f"(\w+)_{\w+\+1}"\)/);
+                if (edgeMatch && i < loopCount - 1) {
+                    const sourceId = `${edgeMatch[1]}_${i}`;
+                    const targetId = `${edgeMatch[2]}_${i + 1}`;
+                    edges.push({
+                        id: `e${sourceId}-${targetId}`,
+                        source: sourceId,
+                        target: targetId
+                    });
+                }
+            });
+        }
     }
 }
 function ensureNodeExists(nodes, id, type, position) {

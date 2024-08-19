@@ -11,6 +11,8 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
     let isParsingConditionalEdge = false;
     let isParsingAddNode = false;
     let addNodeBuffer = '';
+    let isParsingForLoop = false;
+    let forLoopBuffer = '';
 
     lines.forEach((line, index) => {
         // 查找 StateGraph 实例的变量名和 State 类名
@@ -53,12 +55,12 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
                 let source = edgeMatch[1].replace(/"/g, '');
                 let target = edgeMatch[2].replace(/"/g, '');
 
-                if (source === 'START') {
+                if (source === 'START' || source === '__start__') {
                     source = 'start';
                     ensureNodeExists(nodes, 'start', 'start', { x: 0, y: 0 });
                 }
 
-                if (target === 'END') {
+                if (target === 'END' || target === '__end__') {
                     target = 'end';
                     ensureNodeExists(nodes, 'end', 'end', { x: (index + 1) * 150, y: 100 });
                 }
@@ -102,6 +104,19 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
                     isParsingConditionalEdge = false;
                     parseConditionalEdge(conditionalEdgeBuffer.trim(), nodes, edges);
                     conditionalEdgeBuffer = '';
+                }
+            }
+
+            // 开始解析 for 循环
+            if (line.trim().startsWith('for ') && line.includes(GlobalState.graphBuilderVariable)) {
+                isParsingForLoop = true;
+                forLoopBuffer = line + '\n';
+            } else if (isParsingForLoop) {
+                forLoopBuffer += line + '\n';
+                if (line.trim().endsWith(')') || !line.trim().startsWith(' ')) {
+                    isParsingForLoop = false;
+                    parseForLoop(forLoopBuffer.trim(), nodes, edges, index);
+                    forLoopBuffer = '';
                 }
             }
         }
@@ -151,7 +166,7 @@ function parseConditionalEdge(content: string, nodes: Node[], edges: Edge[]) {
 
 
         // 处理 START 特殊情况
-        if (sourceNode === 'START') {
+        if (sourceNode === 'START' || sourceNode === '__start__') {
             sourceNode = 'start';
             ensureNodeExists(nodes, 'start', 'start', { x: 0, y: 0 });
         }
@@ -163,9 +178,9 @@ function parseConditionalEdge(content: string, nodes: Node[], edges: Edge[]) {
         mappings.forEach(mapping => {
             const [condition, target] = mapping.split(':').map(s => s.trim().replace(/['"]/g, ''));
             let targetNode = target;
-
+                    
             // 处理 END 特殊情况
-            if (targetNode === 'END') {
+            if (targetNode === 'END' || targetNode === '__end__') {
                 targetNode = 'end';
                 ensureNodeExists(nodes, 'end', 'end', { x: (nodes.length + 1) * 150, y: 100 });
             }
@@ -178,13 +193,48 @@ function parseConditionalEdge(content: string, nodes: Node[], edges: Edge[]) {
                 data: { condition: condition, conditionFunction: conditionFunction }
             });
 
-            // 如果目标节点不存在且不是 start 或 end，添加一个新的节点
+            // 如果目标节点不存在且不是 start 或 end，添加一个新的���点
             if (!['start', 'end'].includes(targetNode)) {
                 ensureNodeExists(nodes, targetNode, 'custom', { x: (nodes.length + 1) * 150, y: (nodes.length + 1) * 100 });
             }
         });
     } else {
         console.error('Failed to parse conditional edge:', content);
+    }
+}
+
+function parseForLoop(content: string, nodes: Node[], edges: Edge[], startIndex: number) {
+    const lines = content.split('\n');
+    const rangeMatch = lines[0].match(/for\s+\w+\s+in\s+range\((\d+)\):/);
+    
+    if (rangeMatch) {
+        const loopCount = parseInt(rangeMatch[1]);
+        
+        for (let i = 0; i < loopCount; i++) {
+            lines.slice(1).forEach(line => {
+                const nodeMatch = line.match(/add_node\(f"(\w+)_{\w+}",\s*(\w+)\)/);
+                if (nodeMatch) {
+                    const nodeId = `${nodeMatch[1]}_${i}`;
+                    nodes.push({
+                        id: nodeId,
+                        type: 'custom',
+                        position: { x: (startIndex + i) * 150, y: (startIndex + i) * 100 },
+                        data: { label: nodeId, function: nodeMatch[2] }
+                    });
+                }
+
+                const edgeMatch = line.match(/add_edge\(f"(\w+)_{\w+}",\s*f"(\w+)_{\w+\+1}"\)/);
+                if (edgeMatch && i < loopCount - 1) {
+                    const sourceId = `${edgeMatch[1]}_${i}`;
+                    const targetId = `${edgeMatch[2]}_${i+1}`;
+                    edges.push({
+                        id: `e${sourceId}-${targetId}`,
+                        source: sourceId,
+                        target: targetId
+                    });
+                }
+            });
+        }
     }
 }
 

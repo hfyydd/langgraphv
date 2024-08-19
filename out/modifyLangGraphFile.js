@@ -27,10 +27,8 @@ exports.modifyLangGraphFile = modifyLangGraphFile;
 const fs = __importStar(require("fs"));
 const globalState_1 = require("./globalState");
 function modifyLangGraphFile(filePath, operation) {
-    //console.log('Modifying file path:', filePath);
     let content = fs.readFileSync(filePath, 'utf8');
     const lines = content.split('\n');
-    //console.log('Modifying file:', operation);
     switch (operation.type) {
         case 'addNode':
             if (operation.node) {
@@ -128,7 +126,6 @@ function modifyLangGraphFile(filePath, operation) {
                     for (let i = edgesToRemove.length - 1; i >= 0; i--) {
                         lines.splice(edgesToRemove[i], 1);
                     }
-                    console.log(`Removed node ${operation.nodeId} and ${edgesToRemove.length} related edges`);
                 }
             }
             break;
@@ -142,7 +139,6 @@ function modifyLangGraphFile(filePath, operation) {
             if (operation.edgeId) {
                 // 移除开头的 'e' 并分割 source 和 target
                 const [source, target] = operation.edgeId.replace(/^e/, '').split('-');
-                console.log('Removing edge:', source, target);
                 // 查找匹配的 add_edge 语句
                 const edgeIndex = lines.findIndex(line => {
                     // 使用正则表达式来匹配 add_edge 语句，考虑可能的空格变化
@@ -151,19 +147,17 @@ function modifyLangGraphFile(filePath, operation) {
                 });
                 if (edgeIndex !== -1) {
                     lines.splice(edgeIndex, 1);
-                    console.log(`Edge removed at line ${edgeIndex + 1}`);
+                    //console.log(`Edge removed at line ${edgeIndex + 1}`);
                 }
                 else {
-                    console.log('Edge not found in the file');
+                    //console.log('Edge not found in the file');
                 }
             }
             break;
         case 'updateNode':
-            //console.log('Updating node:', operation.node);
             // Handle node updates (e.g., position changes) if needed
             break;
         case 'updateEdge':
-            //console.log('Updating edge:', operation.edge);
             // Handle edge updates if needed
             break;
     }

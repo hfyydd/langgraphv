@@ -71,7 +71,7 @@ graph_builder.set_finish_point("chatbot")
 graph = graph_builder.compile()
 `;
 function activate(context) {
-    console.log('Congratulations, your extension "langgraphv" is now active!');
+    console.log('Congratulations, "LangGraph Visualizer" is now active!');
     const watcher = vscode.workspace.createFileSystemWatcher('**/*.py');
     const updateCurrentFilePath = (document) => {
         globalState_1.GlobalState.currentFilePath = document?.languageId === 'python' ? document.uri.fsPath : undefined;
@@ -86,7 +86,6 @@ function activate(context) {
     };
     const messageHandler = (message) => {
         if (message.type === 'graphOperation' && globalState_1.GlobalState.currentFilePath) {
-            //console.log('Processing graph operation:', message.operation);
             (0, modifyLangGraphFile_1.modifyLangGraphFile)(globalState_1.GlobalState.currentFilePath, message.operation);
         }
     };
@@ -96,6 +95,7 @@ function activate(context) {
             updateCurrentFilePath(editor.document);
             ViewLoader_1.ViewLoader.showWebview(context, messageHandler);
             const parsedGraph = (0, parser_1.parseLangGraphFile)(editor.document.getText());
+            console.log(parsedGraph);
             setTimeout(() => {
                 ViewLoader_1.ViewLoader.postMessageToWebview({ type: 'updateGraph', data: parsedGraph });
             }, 1000);

@@ -15,3 +15,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [0.0.6] -2024-08-20
 
 - Added ability to edit code by clicking on nodes
+
+## [0.0.7] -2024-08-20
+
+- Added monaco-editor

@@ -4,7 +4,16 @@ import { GlobalState } from './globalState';
 export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges: Edge[] } {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
-    const lines = fileContent.split('\n');
+    // 预处理：移除注释
+    const lines = fileContent.split('\n').map(line => {
+        const commentIndex = line.indexOf('#');
+        // 新增：保留缩进
+        return commentIndex !== -1 ? line.substring(0, commentIndex).trim() : line; // 保留缩进
+    }).filter(line => line !== ''); 
+
+    lines.forEach((line, index) => {
+        console.log(line);
+    });
 
     let stateClassName: string | null = null;
     let conditionalEdgeBuffer = '';
@@ -22,7 +31,7 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
 
     lines.forEach((line, index) => {
         const trimmedLine = line.trim();
-        const indentLevel = line.search(/\S|$/) / 4; 
+        const indentLevel = line.search(/\S|$/) / 4;
         // New: Capture function definitions
         if (trimmedLine.startsWith('def ')) {
             if (currentFunction) {
@@ -38,6 +47,8 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
                 functionBuffer += line + '\n';
             } else {
                 // Function has ended
+                console.log('Function ended:', currentFunction);
+                console.log('Function content:', functionBuffer);
                 functionDefinitions[currentFunction] = functionBuffer.trim();
                 currentFunction = '';
                 functionBuffer = '';
@@ -66,9 +77,8 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
             } else {
                 // 解析单行 add_node
                 const nodeRegex = new RegExp(`${GlobalState.graphBuilderVariable}\\.add_node\\("(\\w+)",\\s*(\\w+)`);
-                // 移除注释
-                const lineWithoutComments = line.split('#')[0].trim();
-                const nodeMatch = lineWithoutComments.match(nodeRegex);
+
+                const nodeMatch = line.match(nodeRegex);
                 if (nodeMatch) {
                     const nodeId = nodeMatch[1];
                     const nodeFunction = nodeMatch[2];
@@ -76,8 +86,8 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
                         id: nodeId,
                         type: 'custom',
                         position: { x: index * 150, y: index * 100 },
-                        data: { 
-                            label: nodeId, 
+                        data: {
+                            label: nodeId,
                             function: nodeFunction,
                             codeSnippet: functionDefinitions[nodeFunction] || 'Code not found'
                         }

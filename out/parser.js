@@ -5,7 +5,15 @@ const globalState_1 = require("./globalState");
 function parseLangGraphFile(fileContent) {
     const nodes = [];
     const edges = [];
-    const lines = fileContent.split('\n');
+    // 预处理：移除注释
+    const lines = fileContent.split('\n').map(line => {
+        const commentIndex = line.indexOf('#');
+        // 新增：保留缩进
+        return commentIndex !== -1 ? line.substring(0, commentIndex).trim() : line; // 保留缩进
+    }).filter(line => line !== '');
+    lines.forEach((line, index) => {
+        console.log(line);
+    });
     let stateClassName = null;
     let conditionalEdgeBuffer = '';
     let isParsingConditionalEdge = false;
@@ -38,6 +46,8 @@ function parseLangGraphFile(fileContent) {
             }
             else {
                 // Function has ended
+                console.log('Function ended:', currentFunction);
+                console.log('Function content:', functionBuffer);
                 functionDefinitions[currentFunction] = functionBuffer.trim();
                 currentFunction = '';
                 functionBuffer = '';
@@ -66,9 +76,7 @@ function parseLangGraphFile(fileContent) {
             else {
                 // 解析单行 add_node
                 const nodeRegex = new RegExp(`${globalState_1.GlobalState.graphBuilderVariable}\\.add_node\\("(\\w+)",\\s*(\\w+)`);
-                // 移除注释
-                const lineWithoutComments = line.split('#')[0].trim();
-                const nodeMatch = lineWithoutComments.match(nodeRegex);
+                const nodeMatch = line.match(nodeRegex);
                 if (nodeMatch) {
                     const nodeId = nodeMatch[1];
                     const nodeFunction = nodeMatch[2];

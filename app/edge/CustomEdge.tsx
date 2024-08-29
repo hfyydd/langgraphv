@@ -41,6 +41,3 @@ export default CustomEdge;
 
 
 
-export const edgeTypes = {
-    'custom-edge': CustomEdge,
-  };

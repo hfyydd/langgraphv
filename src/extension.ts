@@ -71,7 +71,8 @@ export function activate(context: vscode.ExtensionContext) {
                 ViewLoader.postMessageToWebview({ type: 'updateGraph', data: parsedGraph });
             }, 1000);
             vscode.window.showInformationMessage('LangGraph file parsed and visualizer opened!');
-        } else {
+        }
+        else {
             vscode.window.showWarningMessage('Please open a Python file first.');
         }
     });

@@ -18,6 +18,8 @@ export type BaseNode = Node<{
   codeSnippet?: string;
   isExpanded?: boolean;
   onCodeSnippetChange?: (id: string, newCodeSnippet: string) => void;
+  conditions?: string[];
+  conditionFunction?: string;
 }>;
 
 // 定义一个好看的颜色数组

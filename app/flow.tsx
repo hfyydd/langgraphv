@@ -23,7 +23,7 @@ import '@xyflow/react/dist/style.css';
 import { BaseNode } from './node/BaseNode';
 import { DefaultNode } from './node/DefaultNode';
 import nodeTypes from './node/index';
-import { edgeTypes } from './edge/CustomEdge';
+import { edgeTypes } from './edge/index';
 
 interface FlowProps {
   initialNodes: Node[];
@@ -78,99 +78,7 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
     edges,
   };
 };
-// const getLayoutedElements = (
-//   nodes: Node[],
-//   edges: Edge[],
-//   expandedNodeId: string | null,
-//   isInitialLayout: boolean,
-//   direction = 'TB'
-// ) => {
-//   const dagreGraph = new dagre.graphlib.Graph();
-//   dagreGraph.setDefaultEdgeLabel(() => ({}));
-//   dagreGraph.setGraph({ rankdir: direction });
 
-//   let affectedNodeIds: Set<string>;
-
-//   if (isInitialLayout) {
-//     // 初始化时全局重排
-//     affectedNodeIds = new Set(nodes.map(node => node.id));
-//   } else if (expandedNodeId) {
-//     // 展开节点时的部分重排逻辑
-//     affectedNodeIds = new Set<string>([expandedNodeId]);
-//     const expandedNode = nodes.find(node => node.id === expandedNodeId);
-
-//     // 获取被展开节点可能遮挡的节点
-//     if (expandedNode) { // 确保 expandedNode 存在
-//       nodes.forEach(node => {
-//         if (node.id !== expandedNodeId && isNodeOverlapping(expandedNode, node)) {
-//           affectedNodeIds.add(node.id);
-//         }
-//       });
-//     }
-//   } else {
-//     console.log('No affected nodes');
-//     // 如果既不是初始化也没有展开的节点，则不进行任何重排
-//     return { nodes, edges };
-//   }
-//   console.log('Affected nodes:', affectedNodeIds);
-
-//   // 设置节点
-//   nodes.forEach((node) => {
-//     if (affectedNodeIds.has(node.id)) {
-//       const width = node.data.isExpanded ? 400 : nodeWidth;
-//       const height = node.data.isExpanded ? 200 : nodeHeight;
-//       dagreGraph.setNode(node.id, { width, height });
-//     }
-//   });
-
-//   // 设置边
-//   edges.forEach((edge) => {
-//     if (isInitialLayout || affectedNodeIds.has(edge.source) || affectedNodeIds.has(edge.target)) {
-//       dagreGraph.setEdge(edge.source, edge.target);
-//     }
-//   });
-
-//   dagre.layout(dagreGraph);
-
-//   // 更新节点位置
-//   const updatedNodes = nodes.map(node => {
-//     if (affectedNodeIds.has(node.id)) {
-//       const nodeWithPosition = dagreGraph.node(node.id);
-//       const width = node.data.isExpanded ? 400 : nodeWidth;
-//       const height = node.data.isExpanded ? 200 : nodeHeight;
-//       return {
-//         ...node,
-//         position: {
-//           x: nodeWithPosition.x - width / 2,
-//           y: nodeWithPosition.y - height / 2,
-//         },
-//       };
-//     }
-//     return node;
-//   });
-//   console.log('Updated nodes:', updatedNodes);
-
-//   return {
-//     nodes: updatedNodes,
-//     edges,
-//   };
-// };
-
-
-
-
-// // 辅助函数：检查两个节点是否重叠
-// const isNodeOverlapping = (node1: Node, node2: Node) => {
-//   const width1 = node1.data.isExpanded ? 400 : nodeWidth;
-//   const height1 = node1.data.isExpanded ? 200 : nodeHeight;
-//   const width2 = node2.data.isExpanded ? 400 : nodeWidth;
-//   const height2 = node2.data.isExpanded ? 200 : nodeHeight;
-
-//   return (
-//     Math.abs(node1.position.x - node2.position.x) < (width1 + width2) / 2 &&
-//     Math.abs(node1.position.y - node2.position.y) < (height1 + height2) / 2
-//   );
-// };
 
 
 function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: FlowProps) {
@@ -221,25 +129,6 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
   }, [edges, onGraphChange, onGraphOperation]);
 
 
-  // const onLayout = useCallback(
-  //   (direction: 'TB' | 'LR') => {
-  //     // 记录当前方向
-  //     const currentDirection = direction === 'TB' ? 'LR' : 'TB';
-  //     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-  //       nodes,
-  //       edges,
-  //       direction
-  //     );
-  //     setNodes([...layoutedNodes]);
-  //     setEdges([...layoutedEdges]);
-  //     onGraphChange?.(layoutedNodes, layoutedEdges);
-  //     // 为每个节点触发 updateNode 操作
-  //     layoutedNodes.forEach(node => {
-  //       onGraphOperation?.({ type: 'updateNode', node });
-  //     });
-  //   },
-  //   [nodes, edges, onGraphChange, onGraphOperation]
-  // );
 
   const addNode = useCallback(() => {
     const newNode: Node = {
@@ -326,6 +215,9 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
         },
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
+        // 添加条件边的属性
+        type: 'condition',
+        data: { condition: '默认条件' },
       };
       setEdges((eds) => addEdge(newEdge, eds));
       onGraphOperation?.({ type: 'addEdge', edge: newEdge });
@@ -380,7 +272,7 @@ function Flow({ initialNodes, initialEdges, onGraphChange, onGraphOperation }: F
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypesWithExpand}
-        edgeTypes={edgeTypes}
+        edgeTypes={edgeTypes}  // 确保这里使用了包含条件边的 edgeTypes
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}

@@ -11,10 +11,6 @@ export function parseLangGraphFile(fileContent: string): { nodes: Node[], edges:
         return commentIndex !== -1 ? line.substring(0, commentIndex).trim() : line; // 保留缩进
     }).filter(line => line !== ''); 
 
-    lines.forEach((line, index) => {
-        console.log(line);
-    });
-
     let stateClassName: string | null = null;
     let conditionalEdgeBuffer = '';
     let isParsingConditionalEdge = false;
@@ -211,18 +207,41 @@ function parseConditionalEdge(content: string, nodes: Node[], edges: Edge[]) {
         let sourceNode = sourceNodeMatch[1].trim().replace(/['"]/g, '');
         const conditionFunction = conditionFunctionMatch[1];
 
-
         // 处理 START 特殊情况
         if (sourceNode === 'START' || sourceNode === '__start__') {
             sourceNode = 'start';
             ensureNodeExists(nodes, 'start', 'start', { x: 0, y: 0 });
         }
 
+        // 创建新的条件节点
+        const conditionNodeId = `condition_${sourceNode}_${conditionFunction}`;
         const mappings = mappingMatch[1].split(',')
             .map(pair => pair.trim())
             .filter(pair => pair.length > 0);
 
-        mappings.forEach(mapping => {
+        const conditions = mappings.map(mapping => mapping.split(':')[0].trim().replace(/['"]/g, ''));
+
+        const conditionNode: Node = {
+            id: conditionNodeId,
+            type: 'condition',
+            position: { x: (nodes.length + 1) * 150, y: (nodes.length + 1) * 100 },
+            data: { 
+                label: conditionFunction,
+                conditionFunction: conditionFunction,
+                conditions: conditions
+            }
+        };
+        nodes.push(conditionNode);
+
+        // 添加从源节点到条件节点的边
+        edges.push({
+            id: `e${sourceNode}-${conditionNodeId}`,
+            source: sourceNode,
+            target: conditionNodeId
+        });
+
+        // 处理每个条件分支
+        mappings.forEach((mapping, index) => {
             const [condition, target] = mapping.split(':').map(s => s.trim().replace(/['"]/g, ''));
             let targetNode = target;
 
@@ -232,15 +251,16 @@ function parseConditionalEdge(content: string, nodes: Node[], edges: Edge[]) {
                 ensureNodeExists(nodes, 'end', 'end', { x: (nodes.length + 1) * 150, y: 100 });
             }
 
-            // 添加边
+            // 添加从条件节点到目标节点的边，包含索引
             edges.push({
-                id: `e${sourceNode}-${targetNode}-${condition}`,
-                source: sourceNode,
+                id: `e${conditionNodeId}-${targetNode}-${condition}`,
+                source: conditionNodeId,
                 target: targetNode,
-                data: { condition: condition, conditionFunction: conditionFunction }
+                sourceHandle: `condition-${index}`, // 添加这行
+                data: { condition: condition } // 可选：添加条件信息到边的数据中
             });
 
-            // 如果目标节点不存在且不是 start 或 end，添加一个新的���点
+            // 如果目标节点不存在且不是 start 或 end，添加一个新的节点
             if (!['start', 'end'].includes(targetNode)) {
                 ensureNodeExists(nodes, targetNode, 'custom', { x: (nodes.length + 1) * 150, y: (nodes.length + 1) * 100 });
             }

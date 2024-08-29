@@ -19,3 +19,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [0.0.7] -2024-08-20
 
 - Added monaco-editor
+
+## [0.0.8] -2024-08-29
+
+- Added condition node
